@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SolidRobot</title>
+    <title>Linux Styled Terminal</title>
     <style>
         body {
             background-color: #2e3436;
@@ -65,6 +65,19 @@
         let username = '';
         let hostname = '';
         let stage = 0;
+        let heldNumber = null;
+        let quizStage = 0;
+        let quizQuestions = [
+            { question: "What is the capital of France?", answer: "Paris" },
+            { question: "What is 2 + 2?", answer: "4" }
+        ];
+        let currentQuizQuestion = 0;
+
+        const th1naiKnowledgeBase = {
+            "math": "Math is the study of numbers, shapes, and patterns.",
+            "pi": "Pi is approximately 3.14159 and is the ratio of a circle's circumference to its diameter.",
+            "gravity": "Gravity is a force that attracts two bodies towards each other."
+        };
 
         function updatePrompt() {
             promptElement.textContent = `${username}@${hostname}:~$`;
@@ -82,18 +95,31 @@
             outputElement.appendChild(newOutput);
         }
 
-        function handleCommand(command) {
+        async function handleCommand(command) {
             appendOutput(`${username}@${hostname}:~$ ${command}`);
 
             if (command === 'clear') {
                 outputElement.innerHTML = '';
             } else if (command.startsWith('wikipedian /s ')) {
                 const query = command.slice(14);
-                const url = `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`;
-                appendLinkOutput(`Searching Wikipedia for "${query}"`, url);
+                const response = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`);
+                const data = await response.json();
+                const results = data.query.search;
+                results.forEach(result => {
+                    appendOutput(result.title + ": " + result.snippet.replace(/<\/?[^>]+(>|$)/g, ""));
+                });
             } else if (command.startsWith('pkgy ')) {
                 const packageName = command.slice(5);
                 handlePackageInstallation(packageName);
+            } else if (command.startsWith('holdanumber ')) {
+                heldNumber = command.slice(12);
+                appendOutput(`Number held: ${heldNumber}`);
+            } else if (command === 'quiz') {
+                handleQuiz();
+            } else if (command.startsWith('th1nai ')) {
+                const query = command.slice(7);
+                const response = th1naiKnowledgeBase[query.toLowerCase()];
+                appendOutput(response ? response : "I don't have information on that topic.");
             } else {
                 appendOutput(`Command not found: ${command}`);
             }
@@ -110,9 +136,25 @@
             };
 
             if (packages[packageName]) {
-                appendLinkOutput(`Downloading ${packageName}`, packages[packageName]);
+                const link = document.createElement('a');
+                link.href = packages[packageName];
+                link.download = '';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                appendOutput(`Downloading ${packageName}...`);
             } else {
                 appendOutput(`Package not found: ${packageName}`);
+            }
+        }
+
+        function handleQuiz() {
+            if (quizStage < quizQuestions.length) {
+                appendOutput(quizQuestions[quizStage].question);
+                quizStage++;
+            } else {
+                appendOutput("Quiz completed!");
+                quizStage = 0;
             }
         }
 
@@ -147,3 +189,4 @@
     </script>
 </body>
 </html>
+
