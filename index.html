@@ -67,16 +67,24 @@
         let stage = 0;
         let heldNumber = null;
         let quizStage = 0;
-        let quizQuestions = [
+        let inQuiz = false;
+
+        const quizQuestions = [
             { question: "What is the capital of France?", answer: "Paris" },
-            { question: "What is 2 + 2?", answer: "4" }
+            { question: "What is 2 + 2?", answer: "4" },
+            { question: "What is the capital of Germany?", answer: "Berlin" },
+            { question: "What is the chemical symbol for water?", answer: "H2O" }
         ];
-        let currentQuizQuestion = 0;
 
         const th1naiKnowledgeBase = {
             "math": "Math is the study of numbers, shapes, and patterns.",
             "pi": "Pi is approximately 3.14159 and is the ratio of a circle's circumference to its diameter.",
-            "gravity": "Gravity is a force that attracts two bodies towards each other."
+            "gravity": "Gravity is a force that attracts two bodies towards each other.",
+            "photosynthesis": "Photosynthesis is the process used by plants to convert light energy into chemical energy.",
+            "quantum mechanics": "Quantum mechanics is a fundamental theory in physics describing the properties of nature on an atomic scale.",
+            "Who are you?": "I'm Th1n.AI on SR - An copilot ported to this terminal. OS created this: macOS Ventura (Basically's OS that running)",
+            "Are you a bot?": "yes."
+        
         };
 
         function updatePrompt() {
@@ -115,11 +123,13 @@
                 heldNumber = command.slice(12);
                 appendOutput(`Number held: ${heldNumber}`);
             } else if (command === 'quiz') {
-                handleQuiz();
+                startQuiz();
             } else if (command.startsWith('th1nai ')) {
-                const query = command.slice(7);
-                const response = th1naiKnowledgeBase[query.toLowerCase()];
-                appendOutput(response ? response : "I don't have information on that topic.");
+                const query = command.slice(7).toLowerCase();
+                const response = th1naiKnowledgeBase[query];
+                appendOutput(response ? `AI: ${response}` : "AI: I don't have information on that topic.");
+            } else if (inQuiz && quizStage > 0 && quizStage <= quizQuestions.length) {
+                checkQuizAnswer(command);
             } else {
                 appendOutput(`Command not found: ${command}`);
             }
@@ -148,14 +158,31 @@
             }
         }
 
-        function handleQuiz() {
+        function startQuiz() {
+            quizStage = 0;
+            inQuiz = true;
+            appendOutput("Quiz started! Answer the following questions:");
+            askNextQuizQuestion();
+        }
+
+        function askNextQuizQuestion() {
             if (quizStage < quizQuestions.length) {
-                appendOutput(quizQuestions[quizStage].question);
+                appendOutput(`q: ${quizQuestions[quizStage].question}`);
                 quizStage++;
             } else {
                 appendOutput("Quiz completed!");
+                inQuiz = false;
                 quizStage = 0;
             }
+        }
+
+        function checkQuizAnswer(answer) {
+            if (answer.toLowerCase() === quizQuestions[quizStage - 1].answer.toLowerCase()) {
+                appendOutput("a: Correct!");
+            } else {
+                appendOutput(`a: Incorrect! The correct answer was: ${quizQuestions[quizStage - 1].answer}`);
+            }
+            askNextQuizQuestion();
         }
 
         inputElement.addEventListener('keydown', function(event) {
@@ -189,4 +216,3 @@
     </script>
 </body>
 </html>
-
