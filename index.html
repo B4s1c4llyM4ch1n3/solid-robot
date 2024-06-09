@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolidRobot</title>
+    <style>
+        body {
+            background-color: #2e3436;
+            color: #ffffff;
+            font-family: monospace;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .terminal {
+            background-color: #1a1a1a;
+            border-radius: 5px;
+            padding: 10px;
+            width: 80%;
+            max-width: 800px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+        .output {
+            white-space: pre-wrap;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+        .input-line {
+            display: flex;
+        }
+        .prompt {
+            margin-right: 5px;
+        }
+        .input {
+            background: none;
+            border: none;
+            color: #ffffff;
+            outline: none;
+            flex-grow: 1;
+        }
+        a {
+            color: #4e9a06;
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="output" id="output"></div>
+        <div class="input-line" id="input-line">
+            <span class="prompt" id="prompt"></span>
+            <input type="text" class="input" id="input" autofocus>
+        </div>
+    </div>
+    <script>
+        const inputElement = document.getElementById('input');
+        const outputElement = document.getElementById('output');
+        const promptElement = document.getElementById('prompt');
+
+        let username = '';
+        let hostname = '';
+        let stage = 0;
+
+        function updatePrompt() {
+            promptElement.textContent = `${username}@${hostname}:~$`;
+        }
+
+        function appendOutput(text) {
+            const newOutput = document.createElement('div');
+            newOutput.textContent = text;
+            outputElement.appendChild(newOutput);
+        }
+
+        function appendLinkOutput(text, href) {
+            const newOutput = document.createElement('div');
+            newOutput.innerHTML = `<a href="${href}" target="_blank">${text}</a>`;
+            outputElement.appendChild(newOutput);
+        }
+
+        function handleCommand(command) {
+            appendOutput(`${username}@${hostname}:~$ ${command}`);
+
+            if (command === 'clear') {
+                outputElement.innerHTML = '';
+            } else if (command.startsWith('wikipedian /s ')) {
+                const query = command.slice(14);
+                const url = `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(query)}`;
+                appendLinkOutput(`Searching Wikipedia for "${query}"`, url);
+            } else if (command.startsWith('pkgy ')) {
+                const packageName = command.slice(5);
+                handlePackageInstallation(packageName);
+            } else {
+                appendOutput(`Command not found: ${command}`);
+            }
+
+            outputElement.scrollTop = outputElement.scrollHeight;
+        }
+
+        function handlePackageInstallation(packageName) {
+            const packages = {
+                anydesk: 'https://download.anydesk.com/AnyDesk.exe',
+                chrome: 'https://www.google.com/chrome/',
+                'firefox-latest': 'https://www.mozilla.org/en-US/firefox/new/',
+                'mypal-new': 'https://www.mypal-browser.org/release/mypal-68.14.2.en-US.win32.zip'
+            };
+
+            if (packages[packageName]) {
+                appendLinkOutput(`Downloading ${packageName}`, packages[packageName]);
+            } else {
+                appendOutput(`Package not found: ${packageName}`);
+            }
+        }
+
+        inputElement.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                const command = inputElement.value.trim();
+                inputElement.value = '';
+
+                if (stage === 0) {
+                    username = command;
+                    appendOutput(`Setting username to ${username}`);
+                    stage++;
+                    appendOutput('Enter hostname:');
+                } else if (stage === 1) {
+                    hostname = command;
+                    appendOutput(`Setting hostname to ${hostname}`);
+                    stage++;
+                    updatePrompt();
+                } else {
+                    handleCommand(command);
+                }
+
+                if (stage === 2) {
+                    updatePrompt();
+                    document.getElementById('input-line').style.display = 'flex';
+                }
+            }
+        });
+
+        // Initial prompt for username
+        appendOutput('First boot: Please enter your username:');
+    </script>
+</body>
+</html>
